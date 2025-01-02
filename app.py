@@ -4,10 +4,36 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET','POST'])
+@app.route('/', methods=['GET'])
 def index():
-  if request.method == 'GET':
-    return render_template('index.html')
+    # Redirige automaticamente alla pagina di login
+    return redirect(url_for('login'))  # Ritorna alla route /login
+
+@app.route('/home', methods=['GET'])
+def home():
+    # Redirige automaticamente alla pagina di login
+    return render_template('home.html')  # Ritorna alla route /login
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+  if request.method == 'POST':
+        username = request.form['e-mail']
+        password = request.form['password']
+
+        # Connetti al database e cerca l'utente
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('SELECT password FROM users WHERE username = ?', (username,))
+        stored_password = c.fetchone()
+        if stored_password and check_password_hash(stored_password[0], password):
+            # La password è corretta
+            return redirect(url_for('home'))  # Rendi il login riuscito
+        else:
+            # La password non è corretta
+            return 'Invalid credentials', 401
+  
+  
+  return render_template('login.html')
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
@@ -16,7 +42,7 @@ def create_account():
         password = request.form['password']
 
         # Cripta la password prima di salvarla
-        hashed_password = generate_password_hash(password,method='sha256')
+        hashed_password = generate_password_hash(password,method='pbkdf2:sha256')
         
         # Salva l'utente nel database
         conn = sqlite3.connect('users.db')
@@ -27,7 +53,7 @@ def create_account():
 
 
 
-        return redirect(url_for('index'))  # Dopo aver aggiunto l'utente, ritorna alla pagina principale
+        return redirect(url_for('login'))  # Dopo aver aggiunto l'utente, ritorna alla pagina principale
     
     return render_template('create_account.html')
 
