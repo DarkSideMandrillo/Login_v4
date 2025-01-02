@@ -11,29 +11,30 @@ def index():
 
 @app.route('/home', methods=['GET'])
 def home():
-    # Redirige automaticamente alla pagina di login
-    return render_template('home.html')  # Ritorna alla route /login
+    return render_template('home.html')  
 
 @app.route('/login', methods=['GET','POST'])
 def login():
   if request.method == 'POST':
-        username = request.form['e-mail']
-        password = request.form['password']
+    username = request.form['e-mail']
+    password = request.form['password']
+    return validate(username,password)
 
-        # Connetti al database e cerca l'utente
-        conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-        c.execute('SELECT password FROM users WHERE username = ?', (username,))
-        stored_password = c.fetchone()
-        if stored_password and check_password_hash(stored_password[0], password):
-            # La password è corretta
-            return redirect(url_for('home'))  # Rendi il login riuscito
-        else:
-            # La password non è corretta
-            return 'Invalid credentials', 401
-  
-  
   return render_template('login.html')
+
+def validate(username,password):
+  # Connetti al database e cerca l'utente
+  conn = sqlite3.connect('users.db')
+  c = conn.cursor()
+  c.execute('SELECT password FROM users WHERE username = ?', (username,))
+  stored_password = c.fetchone() # restituisce la PRIMA riga
+  if stored_password and check_password_hash(stored_password[0], password):
+      # La password è corretta
+      return redirect(url_for('home'))  # Rendi il login riuscito
+  else:
+      # La password non è corretta
+      return render_template('login.html', alert="Invalid credential!")
+
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
