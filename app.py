@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -11,7 +11,10 @@ def index():
 
 @app.route('/home', methods=['GET'])
 def home():
-    return render_template('home.html')  
+    username = request.cookies.get('username') # legge il cookie "username"
+    if not username:
+       return redirect(url_for('login')) # se non c'è il cookie, ritorna al login
+    return render_template('home.html', username=username)  
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -29,10 +32,12 @@ def validate(username,password):
   c.execute('SELECT password FROM users WHERE username = ?', (username,))
   stored_password = c.fetchone() # restituisce la PRIMA riga
   if stored_password and check_password_hash(stored_password[0], password):
-      # La password è corretta
-      return redirect(url_for('home'))  # Rendi il login riuscito
+      # Login riuscito
+      response =make_response(redirect(url_for('home')))  # make_response serve a creare una risposta HTTP personalizzata (aggiungiendo i cookie)
+      response.set_cookie('username',username,max_age=60*60*24) # Il cookie dura 1 giorno
+      return response
   else:
-      # La password non è corretta
+      # Login fallito
       return render_template('login.html', alert="Invalid credential!")
 
 
@@ -57,6 +62,12 @@ def create_account():
         return redirect(url_for('login'))  # Dopo aver aggiunto l'utente, ritorna alla pagina principale
     
     return render_template('create_account.html')
+
+@app.route('/logout')
+def logout():
+   response = make_response(redirect(url_for('login')))
+   response.delete_cookie('username')
+   return response
 
 if __name__ == '__main__':
   app.run(debug=True, host='0.0.0.0',port=4444)
