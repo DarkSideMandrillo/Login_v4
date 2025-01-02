@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -13,11 +14,14 @@ def create_account():
     if request.method == 'POST':
         username = request.form['e-mail']
         password = request.form['password']
+
+        # Cripta la password prima di salvarla
+        hashed_password = generate_password_hash(password,method='sha256')
         
         # Salva l'utente nel database
         conn = sqlite3.connect('users.db')
         c = conn.cursor()
-        c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+        c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
         conn.commit()
         conn.close()
 
