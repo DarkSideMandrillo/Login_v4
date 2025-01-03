@@ -4,12 +4,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
-def index():
-    # Redirige automaticamente alla pagina di login
-    return redirect(url_for('login'))  # Ritorna alla route /login
 
-@app.route('/home', methods=['GET'])
+
+@app.route('/', methods=['GET'])
 def home():
     username = request.cookies.get('username') # legge il cookie "username"
     if not username:
